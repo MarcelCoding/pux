@@ -1,0 +1,32 @@
+[package]
+name = "pux"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+#hyper-rustls = { version = "0.23", default-features = false, features = ["http1", "http2", "tls12", "webpki-tokio"] }
+hyper = { version = "0.14", default-features = false, features = ["tcp", "server", "client", "http1", "http2"] }
+tokio = { version = "1.21", default-features = false, features = ["macros", "rt-multi-thread", "net"] }
+futures-util = { version = "0.3", default-features = false, features = ["alloc"] }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+#rustls = { version = "0.20", default-features = false }
+tracing-subscriber = "0.3"
+async-trait = "0.1"
+serde_yaml = "0.9"
+tracing = "0.1"
+pin-project-lite = "0.2"
+tokio-rustls = { version = "0.23", default-features = false, features = ["default", "tls12"] }
+left-right = "0.11"
+serde_json = "1.0"
+rustls-pemfile = "1.0"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+# by overriding our dependencies' compilation settings, we can further optimize for size
+# https://docs.rust-embedded.org/book/unsorted/speed-vs-size.html#optimizing-dependencies
+[profile.release.package."*"]
+codegen-units = 1

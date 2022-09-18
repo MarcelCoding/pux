@@ -1,0 +1,43 @@
+use std::net::SocketAddr;
+
+use serde::Deserialize;
+use tokio_rustls::webpki::DnsName;
+
+#[derive(Deserialize)]
+pub struct Config {
+  #[serde(default)]
+  pub entrypoints: Vec<EntrypointConfig>,
+  #[serde(default)]
+  pub routes: Vec<RouteConfig>,
+  #[serde(default)]
+  pub upstreams: Vec<UpstreamConfig>,
+  #[serde(default)]
+  pub certs: Vec<CertificateConfig>,
+}
+
+#[derive(Deserialize)]
+pub struct EntrypointConfig {
+  pub id: String,
+  pub addr: SocketAddr,
+  pub tls: bool,
+}
+
+#[derive(Deserialize)]
+pub struct RouteConfig {
+  pub entrypoints: Vec<String>,
+  pub host: String,
+  pub upstream: String,
+}
+
+#[derive(Deserialize)]
+pub struct UpstreamConfig {
+  pub id: String,
+  pub addrs: Vec<SocketAddr>,
+}
+
+#[derive(Deserialize)]
+pub struct CertificateConfig {
+  pub names: Vec<String>,
+  pub chain: String,
+  pub key: String,
+}

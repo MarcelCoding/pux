@@ -1,0 +1,24 @@
+entrypoints:
+  - id: http
+    addr: '[::]:8080'
+    tls: false
+
+  - id: https
+    addr: '[::]:8443'
+    tls: true
+
+routes:
+  - host: git.m4rc3l.de
+    entrypoints: [ https ]
+    upstream: git
+
+  - host: ci.m4rc3l.de
+    entrypoints: [ https ]
+    upstream: ci
+
+upstreams:
+  - id: git
+    addrs: [ 127.0.0.1:8050 ]
+
+  - id: ci
+    addrs: [ 127.0.0.1:8051 ]
