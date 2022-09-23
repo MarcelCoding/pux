@@ -1,7 +1,6 @@
 use std::net::SocketAddr;
 
 use serde::Deserialize;
-use tokio_rustls::webpki::DnsName;
 
 #[derive(Deserialize)]
 pub struct Config {
@@ -9,6 +8,7 @@ pub struct Config {
   pub entrypoints: Vec<EntrypointConfig>,
   #[serde(default)]
   pub routes: Vec<RouteConfig>,
+  pub services: ServiceConfig,
   #[serde(default)]
   pub upstreams: Vec<UpstreamConfig>,
   #[serde(default)]
@@ -24,8 +24,21 @@ pub struct EntrypointConfig {
 
 #[derive(Deserialize)]
 pub struct RouteConfig {
-  pub entrypoints: Vec<String>,
   pub host: String,
+  #[serde(default)]
+  pub path: Vec<String>,
+  pub entrypoints: Vec<String>,
+  pub service: String,
+}
+
+#[derive(Deserialize)]
+pub struct ServiceConfig {
+  pub proxy: Vec<ProxyServiceConfig>,
+}
+
+#[derive(Deserialize)]
+pub struct ProxyServiceConfig {
+  pub id: String,
   pub upstream: String,
 }
 

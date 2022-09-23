@@ -6,8 +6,6 @@ use hyper::{http, StatusCode};
 pub type PuxResult<T> = Result<T, PuxError>;
 
 pub enum PuxError {
-  EntrypointAlreadyStarted(String),
-  EntrypointNotStarted(String),
   Io(Error),
   Http(http::Error),
   Hyper(hyper::Error),
@@ -17,8 +15,6 @@ pub enum PuxError {
 impl Display for PuxError {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
-      Self::EntrypointAlreadyStarted(id) => write!(f, "Entrypoint {} already started", id),
-      Self::EntrypointNotStarted(id) => write!(f, "Entrypoint {} not started", id),
       Self::Io(err) => write!(f, "IO Error: {}", err),
       Self::Http(err) => write!(f, "Http Error: {}", err),
       Self::Hyper(err) => write!(f, "Hyper Error: {}", err),

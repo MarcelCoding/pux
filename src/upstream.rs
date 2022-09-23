@@ -25,9 +25,7 @@ impl Upstream {
       conns: RwLock::new(Vec::new()),
     }
   }
-}
 
-impl Upstream {
   pub async fn send(&self, mut req: Request<Body>) -> PuxResult<Response<Body>> {
     let uri = Uri::from_str(&format!(
       "https://www.google.com{}?{}",

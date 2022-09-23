@@ -11,11 +11,6 @@ use tokio_rustls::rustls::sign::{any_supported_type, CertifiedKey, SigningKey};
 use tokio_rustls::rustls::PrivateKey;
 use tokio_rustls::webpki::DnsName;
 
-struct CertData {
-  key: Vec<String>,
-  chain: Vec<Vec<String>>,
-}
-
 pub struct CertStore {
   certs: HashMap<String, Arc<CertifiedKey>>,
   fallback_name: String,
@@ -47,10 +42,7 @@ impl ResolvesServerCert for CertStore {
       None => &self.fallback_name,
     };
 
-    match self.certs.get(name) {
-      Some(key) => Some(key.clone()),
-      None => None,
-    }
+    self.certs.get(name).map(|key| key.clone())
   }
 }
 

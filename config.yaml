@@ -8,17 +8,40 @@ entrypoints:
     tls: true
 
 routes:
+#  - host: m4rc3l.de
+#    middlewares: [ ]
+
   - host: git.m4rc3l.de
-    entrypoints: [ https ]
-    upstream: git
+    entrypoints: [ http, https ]
+    middlewares: [ ]
+    service: git
 
   - host: ci.m4rc3l.de
-    entrypoints: [ https ]
-    upstream: ci
+    entrypoints: [ http, https ]
+    middlewares: [ ]
+    service: ci
+
+services:
+  proxy:
+    - id: git
+      upstream: git
+    - id: ci
+      upstream: ci
+
+  static:
+    - id: m4rc3l
+      root: /var/www/html
+      index: index.html
+      fallback: 404.html
 
 upstreams:
   - id: git
     addrs: [ 127.0.0.1:8050 ]
+    health:
+      url: /health
+      expected: 200
+      intervall: 60
+      timeout: 3
 
   - id: ci
     addrs: [ 127.0.0.1:8051 ]

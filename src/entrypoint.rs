@@ -1,6 +1,5 @@
 use std::convert::Infallible;
 use std::io;
-use std::net::SocketAddr;
 use std::sync::Arc;
 
 use hyper::server::conn::Http;
@@ -40,18 +39,19 @@ impl Entrypoint {
       let (stream, peer_addr) = self.listener.accept().await?;
       stream.set_nodelay(true)?;
 
-      let handler = self.handler.clone();
-      let service = service_fn(move |req| {
-        let handler = handler.clone();
+      let service = {
+        let handler = self.handler.clone();
+        service_fn(move |req| {
+          let handler = handler.clone();
 
-        async move { Ok::<_, Infallible>(handler.handle(peer_addr, req).await) }
-      });
+          async move { Ok::<_, Infallible>(handler.handle(peer_addr, req).await) }
+        })
+      };
 
       match &self.tls_acceptor {
         None => {
+          let conn = Http::new().serve_connection(stream, service);
           tokio::spawn(async move {
-            let conn = Http::new().serve_connection(stream, service);
-
             if let Err(err) = conn.await {
               error!("Failed to serve connection: {}", err);
             }

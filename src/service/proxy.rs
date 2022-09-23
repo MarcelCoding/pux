@@ -1,16 +1,17 @@
+use std::sync::Arc;
 use async_trait::async_trait;
-use hyper::{Body, Request, Response, StatusCode};
+use hyper::{Body, Request, Response};
 
 use crate::service::Service;
 use crate::upstream::Upstream;
 use crate::PuxResult;
 
 pub struct ProxyService {
-  upstream: Upstream,
+  upstream: Arc<Upstream>,
 }
 
 impl ProxyService {
-  pub fn new(upstream: Upstream) -> Self {
+  pub fn new(upstream: Arc<Upstream>) -> Self {
     Self { upstream }
   }
 }
@@ -18,6 +19,6 @@ impl ProxyService {
 #[async_trait]
 impl Service for ProxyService {
   async fn handle(&self, req: Request<Body>) -> PuxResult<Response<Body>> {
-    Err(StatusCode::NOT_IMPLEMENTED.into())
+    self.upstream.send(req).await
   }
 }

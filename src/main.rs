@@ -2,17 +2,20 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::sync::Arc;
 
-use tokio_rustls::rustls::ServerConfig;
 use tokio_rustls::rustls::sign::CertifiedKey;
+use tokio_rustls::rustls::ServerConfig;
 use tokio_rustls::webpki::DnsNameRef;
 use tracing::{error, info};
 
-use crate::cert::{CertStore, load_certs, load_private_key};
+use crate::cert::{load_certs, load_private_key, CertStore};
 use crate::config::{CertificateConfig, Config};
 use crate::entrypoint::Entrypoint;
 use crate::error::PuxResult;
 use crate::handler::Handler;
 use crate::pux::Pux;
+use crate::routes::Routes;
+use crate::service::proxy::ProxyService;
+use crate::service::Service;
 use crate::upstream::Upstream;
 
 mod cert;
@@ -21,6 +24,7 @@ mod entrypoint;
 mod error;
 mod handler;
 mod pux;
+mod routes;
 mod service;
 mod upstream;
 
@@ -44,34 +48,47 @@ async fn main() -> PuxResult<()> {
     upstreams.insert(conf.id, Arc::new(Upstream::new(conf.addrs)));
   }
 
+  let mut services: HashMap<String, Arc<dyn Service + Send + Sync>> =
+    HashMap::with_capacity(config.services.proxy.len());
+
+  for config in config.services.proxy {
+    services.insert(
+      config.id,
+      Arc::new(ProxyService::new(
+        upstreams.get(&config.upstream).unwrap().clone(),
+      )),
+    );
+  }
+
   let mut entrypoints = Vec::with_capacity(config.entrypoints.len());
   for entrypointC in config.entrypoints {
-    let mut routes = HashMap::new();
+    let mut routes = Routes::new();
     for route in &config.routes {
       if route.entrypoints.contains(&entrypointC.id) {
         routes.insert(
           route.host.to_string(),
-          upstreams.get(&route.upstream).unwrap().clone(),
+          route.path.clone(),
+          services.get(&route.service).unwrap().clone(),
         );
       }
     }
 
     let handler = Arc::new(Handler::new(routes));
 
-    let conf = if entrypointC.tls {
-      let mut config1 = ServerConfig::builder()
+    let tls_config = if entrypointC.tls {
+      let mut config = ServerConfig::builder()
         .with_safe_defaults()
         .with_no_client_auth()
         .with_cert_resolver(cert_store.clone());
 
-      config1.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec(), b"http/1.0".to_vec()];
+      config.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec()];
 
-      Some(Arc::new(config1))
+      Some(Arc::new(config))
     } else {
       None
     };
 
-    match Entrypoint::bind(&entrypointC, handler, conf).await {
+    match Entrypoint::bind(&entrypointC, handler, tls_config).await {
       Ok(entrypoint) => {
         entrypoints.push(entrypoint);
         info!(
