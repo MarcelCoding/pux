@@ -46,6 +46,7 @@ pub struct ProxyServiceConfig {
 pub struct UpstreamConfig {
   pub id: String,
   pub addrs: Vec<SocketAddr>,
+  pub sni: Option<String>,
 }
 
 #[derive(Deserialize)]

@@ -1,7 +1,6 @@
 use std::net::{IpAddr, SocketAddr};
 use std::time::{Duration, Instant};
 
-use futures_util::FutureExt;
 use hyper::header::{CONTENT_TYPE, HOST, SERVER};
 use hyper::http::HeaderValue;
 use hyper::{Body, Request, Response, StatusCode};
@@ -42,7 +41,7 @@ impl Handler {
     let service = match host {
       Some(ref host) => {
         let path = req.uri().path().split('/').collect::<Vec<&str>>();
-        self.routes.find(&host, &path)
+        self.routes.find(host, &path)
       }
       None => None,
     };

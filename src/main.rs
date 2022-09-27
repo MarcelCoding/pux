@@ -2,6 +2,9 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::sync::Arc;
 
+use tokio::signal::ctrl_c;
+use tokio::{select, signal};
+use tokio_rustls::rustls::client::ServerName;
 use tokio_rustls::rustls::sign::CertifiedKey;
 use tokio_rustls::rustls::ServerConfig;
 use tokio_rustls::webpki::DnsNameRef;
@@ -45,7 +48,16 @@ async fn main() -> PuxResult<()> {
 
   let mut upstreams = HashMap::new();
   for conf in config.upstreams {
-    upstreams.insert(conf.id, Arc::new(Upstream::new(conf.addrs)));
+    upstreams.insert(
+      conf.id,
+      Arc::new(
+        Upstream::new(
+          conf.addrs,
+          conf.sni.map(|name| ServerName::try_from(&*name).unwrap()),
+        )
+        .await,
+      ),
+    );
   }
 
   let mut services: HashMap<String, Arc<dyn Service + Send + Sync>> =
@@ -107,9 +119,19 @@ async fn main() -> PuxResult<()> {
 
   let pux = Pux::new(entrypoints);
 
-  if let Err(err) = pux.start().await {
-    error!("Server Error: {}", err);
-    std::process::exit(1);
+  select! {
+    res = pux.start() => {
+      if let Err(err) = res {
+        error!("Server Error: {}", err);
+        std::process::exit(1);
+      }
+    },
+    _ = shutdown_signal() => {
+      info!("Shutdown signal received. Graceful shutdown will be performed...");
+      if let Err(err) = pux.shutdown() {
+        error!("Unable to stop server: {}", err);
+      }
+    }
   }
 
   Ok(())
@@ -134,4 +156,26 @@ fn build_cert_store(certs: Vec<CertificateConfig>) -> CertStore {
   }
 
   store
+}
+
+async fn shutdown_signal() {
+  let ctrl_c = async { ctrl_c().await.expect("failed to install Ctrl+C handler") };
+
+  #[cfg(unix)]
+  {
+    let terminate = async {
+      signal::unix::signal(signal::unix::SignalKind::terminate())
+        .expect("failed to install signal handler")
+        .recv()
+        .await;
+    };
+
+    select! {
+      _ = ctrl_c => {},
+      _ = terminate => {},
+    }
+  }
+
+  #[cfg(not(unix))]
+  ctrl_c.await;
 }

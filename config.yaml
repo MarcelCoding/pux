@@ -8,8 +8,11 @@ entrypoints:
     tls: true
 
 routes:
-#  - host: m4rc3l.de
-#    middlewares: [ ]
+  #  - host: m4rc3l.de
+  #    middlewares: [ ]
+  - host: www.google.com
+    entrypoints: [ http ]
+    service: google
 
   - host: git.m4rc3l.de
     entrypoints: [ http, https ]
@@ -27,6 +30,8 @@ services:
       upstream: git
     - id: ci
       upstream: ci
+    - id: google
+      upstream: google
 
   static:
     - id: m4rc3l
@@ -36,12 +41,13 @@ services:
 
 upstreams:
   - id: git
-    addrs: [ 127.0.0.1:8050 ]
-    health:
-      url: /health
-      expected: 200
-      intervall: 60
-      timeout: 3
+    addrs: [ 10.99.0.26:8443 ]
+    sni: marcel.hel1.not4y.net
 
   - id: ci
-    addrs: [ 127.0.0.1:8051 ]
+    addrs: [ 10.99.0.26:8443 ]
+    sni: marcel.hel1.not4y.net
+
+  - id: google
+    addrs: [ 142.250.180.68:443 ]
+    sni: www.google.com

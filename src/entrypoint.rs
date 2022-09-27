@@ -5,6 +5,8 @@ use std::sync::Arc;
 use hyper::server::conn::Http;
 use hyper::service::service_fn;
 use tokio::net::TcpListener;
+use tokio::select;
+use tokio::sync::broadcast::Receiver;
 use tokio_rustls::TlsAcceptor;
 use tracing::error;
 
@@ -34,9 +36,13 @@ impl Entrypoint {
     })
   }
 
-  pub async fn accept(&self) -> PuxResult<()> {
+  pub async fn accept(&self, mut shutdown: Receiver<()>) -> PuxResult<()> {
     loop {
-      let (stream, peer_addr) = self.listener.accept().await?;
+      let (stream, peer_addr) = select! {
+       resp = self.listener.accept() => resp?,
+        _ = shutdown.recv() => return Ok(()),
+      };
+
       stream.set_nodelay(true)?;
 
       let service = {

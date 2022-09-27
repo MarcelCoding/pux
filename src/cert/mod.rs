@@ -42,7 +42,7 @@ impl ResolvesServerCert for CertStore {
       None => &self.fallback_name,
     };
 
-    self.certs.get(name).map(|key| key.clone())
+    self.certs.get(name).cloned()
   }
 }
 

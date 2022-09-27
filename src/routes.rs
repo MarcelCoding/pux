@@ -24,9 +24,7 @@ impl Routes {
         paths.sort_by(|(a, _), (b, _)| a.len().cmp(&b.len()))
       }
       Entry::Vacant(vacant) => {
-        let mut paths = Vec::with_capacity(1);
-        paths.push((path, service));
-        vacant.insert(paths);
+        vacant.insert(vec![(path, service)]);
       }
     };
   }
@@ -34,7 +32,7 @@ impl Routes {
   pub fn find(
     &self,
     supplied_host: &str,
-    supplied_path: &Vec<&str>,
+    supplied_path: &[&str],
   ) -> Option<&Arc<dyn Service + Send + Sync>> {
     let paths = self.0.get(supplied_host)?;
 
