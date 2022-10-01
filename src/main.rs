@@ -73,10 +73,10 @@ async fn main() -> PuxResult<()> {
   }
 
   let mut entrypoints = Vec::with_capacity(config.entrypoints.len());
-  for entrypointC in config.entrypoints {
+  for cfg in config.entrypoints {
     let mut routes = Routes::new();
     for route in &config.routes {
-      if route.entrypoints.contains(&entrypointC.id) {
+      if route.entrypoints.contains(&cfg.id) {
         routes.insert(
           route.host.to_string(),
           route.path.clone(),
@@ -87,7 +87,7 @@ async fn main() -> PuxResult<()> {
 
     let handler = Arc::new(Handler::new(routes));
 
-    let tls_config = if entrypointC.tls {
+    let tls_config = if cfg.tls {
       let mut config = ServerConfig::builder()
         .with_safe_defaults()
         .with_no_client_auth()
@@ -100,18 +100,18 @@ async fn main() -> PuxResult<()> {
       None
     };
 
-    match Entrypoint::bind(&entrypointC, handler, tls_config).await {
+    match Entrypoint::bind(&cfg, handler, tls_config).await {
       Ok(entrypoint) => {
         entrypoints.push(entrypoint);
         info!(
           "Entrypoint {} bound to {}",
-          entrypointC.id, entrypointC.addr,
+          cfg.id, cfg.addr,
         );
       }
       Err(err) => {
         error!(
           "Failed to bind entrypoint {} to {}: {}",
-          entrypointC.id, entrypointC.addr, err
+          cfg.id, cfg.addr, err
         );
       }
     };

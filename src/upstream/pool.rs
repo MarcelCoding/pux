@@ -7,6 +7,7 @@ use hyper::{Body, Request, Response};
 use tokio::sync::Mutex;
 use tokio::time::sleep;
 use tokio_rustls::rustls::ServerName;
+use tracing::error;
 
 use crate::upstream::conn::HttpConnection;
 use crate::upstream::error::Error;
@@ -76,22 +77,23 @@ impl HttpPool {
       SelectResult::Addr(addr) => match HttpConnection::open(&addr, &self.sni).await {
         Ok(conn) => conn,
         Err(err) => {
-          {
-            let mut internal = self.internal.lock().await;
-            internal.remove_conn(&id);
-          }
+          self.internal.lock().await.remove_conn(&id);
           return Err(err);
         }
       },
     };
 
-    // info!("Using conn {:?}", id);
     let resp = conn.send(req).await;
 
-    {
-      let mut internal = self.internal.lock().await;
-      internal.push(id, conn);
-    }
+    let internal_clone = self.internal.clone();
+    tokio::spawn(async move {
+      if let Err(err) = conn.ready().await {
+        internal_clone.lock().await.remove_conn(&id);
+        error!("Connection closed: {}", err);
+      } else {
+        internal_clone.lock().await.push(id, conn);
+      }
+    });
 
     resp
   }

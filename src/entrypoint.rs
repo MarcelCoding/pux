@@ -1,10 +1,11 @@
 use std::convert::Infallible;
 use std::io;
+use std::net::SocketAddr;
 use std::sync::Arc;
 
 use hyper::server::conn::Http;
 use hyper::service::service_fn;
-use tokio::net::TcpListener;
+use tokio::net::{TcpListener, TcpStream};
 use tokio::select;
 use tokio::sync::broadcast::Receiver;
 use tokio_rustls::TlsAcceptor;
@@ -28,21 +29,29 @@ impl Entrypoint {
     handler: Arc<Handler>,
     tls_config: Option<Arc<ServerConfig>>,
   ) -> io::Result<Self> {
+    let listener = TcpListener::bind(config.addr).await?;
+    let tls_acceptor = tls_config.map(|config| Arc::new(TlsAcceptor::from(config)));
+
     Ok(Self {
       id: config.id.to_string(),
-      listener: TcpListener::bind(config.addr).await?,
+      listener,
       handler,
-      tls_acceptor: tls_config.map(|config| Arc::new(TlsAcceptor::from(config))),
+      tls_acceptor,
     })
   }
 
-  pub async fn accept(&self, mut shutdown: Receiver<()>) -> PuxResult<()> {
-    loop {
-      let (stream, peer_addr) = select! {
-       resp = self.listener.accept() => resp?,
-        _ = shutdown.recv() => return Ok(()),
-      };
+  async fn accept_stram(
+    &self,
+    shutdown: &mut Receiver<()>,
+  ) -> PuxResult<Option<(TcpStream, SocketAddr)>> {
+    select! {
+      resp = self.listener.accept() => Ok(Some(resp?)),
+      _ = shutdown.recv() => Ok(None),
+    }
+  }
 
+  pub async fn accept(&self, mut shutdown: Receiver<()>) -> PuxResult<()> {
+    while let Some((stream, peer_addr)) = self.accept_stram(&mut shutdown).await? {
       stream.set_nodelay(true)?;
 
       let service = {
@@ -56,8 +65,8 @@ impl Entrypoint {
 
       match &self.tls_acceptor {
         None => {
-          let conn = Http::new().serve_connection(stream, service);
           tokio::spawn(async move {
+            let conn = Http::new().serve_connection(stream, service);
             if let Err(err) = conn.await {
               error!("Failed to serve connection: {}", err);
             }
@@ -83,6 +92,8 @@ impl Entrypoint {
         }
       }
     }
+
+    Ok(())
   }
 
   pub fn id(&self) -> &str {

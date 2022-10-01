@@ -5,6 +5,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
+use futures_util::future::poll_fn;
 use hyper::client::conn::Builder;
 use hyper::client::conn::SendRequest;
 use hyper::{Body, Request, Response};
@@ -83,6 +84,10 @@ impl HttpConnection {
     });
 
     Ok(Self { send })
+  }
+
+  pub(crate) async fn ready(&mut self) -> hyper::Result<()> {
+    poll_fn(|cx| self.send.poll_ready(cx)).await
   }
 
   pub(crate) async fn send(&mut self, req: Request<Body>) -> Result<Response<Body>, Error> {

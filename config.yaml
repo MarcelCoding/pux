@@ -10,6 +10,10 @@ entrypoints:
 routes:
   #  - host: m4rc3l.de
   #    middlewares: [ ]
+  - host: localhost
+    entrypoints: [ http ]
+    service: python
+
   - host: www.google.com
     entrypoints: [ http ]
     service: google
@@ -32,6 +36,8 @@ services:
       upstream: ci
     - id: google
       upstream: google
+    - id: python
+      upstream: python
 
   static:
     - id: m4rc3l
@@ -51,3 +57,7 @@ upstreams:
   - id: google
     addrs: [ 142.250.180.68:443 ]
     sni: www.google.com
+
+  - id: python
+    addrs: [ 127.0.0.1:8000 ]
+
