@@ -12,18 +12,18 @@ use crate::routes::Routes;
 
 const ERROR_PAGE: &str = include_str!("error.html");
 
-pub struct Handler {
+pub(crate) struct Handler {
   routes: Routes,
 }
 
 impl Handler {
-  pub fn new(routes: Routes) -> Self {
+  pub(crate) fn new(routes: Routes) -> Self {
     Self { routes }
   }
 }
 
 impl Handler {
-  pub async fn handle(&self, peer_addr: SocketAddr, req: Request<Body>) -> Response<Body> {
+  pub(crate) async fn handle(&self, peer_addr: SocketAddr, req: Request<Body>) -> Response<Body> {
     let start = Instant::now();
 
     let host = req

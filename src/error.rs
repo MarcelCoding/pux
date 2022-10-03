@@ -3,9 +3,9 @@ use std::io::Error;
 
 use hyper::{http, StatusCode};
 
-pub type PuxResult<T> = Result<T, PuxError>;
+pub(crate) type PuxResult<T> = Result<T, PuxError>;
 
-pub enum PuxError {
+pub(crate) enum PuxError {
   Io(Error),
   Http(http::Error),
   Hyper(hyper::Error),

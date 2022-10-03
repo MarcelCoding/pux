@@ -9,12 +9,12 @@ use crate::service::Service;
 use crate::upstream::Upstream;
 use crate::PuxResult;
 
-pub struct ProxyService {
+pub(crate) struct ProxyService {
   upstream: Arc<Upstream>,
 }
 
 impl ProxyService {
-  pub fn new(upstream: Arc<Upstream>) -> Self {
+  pub(crate) fn new(upstream: Arc<Upstream>) -> Self {
     Self { upstream }
   }
 }

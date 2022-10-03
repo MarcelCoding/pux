@@ -103,10 +103,7 @@ async fn main() -> PuxResult<()> {
     match Entrypoint::bind(&cfg, handler, tls_config).await {
       Ok(entrypoint) => {
         entrypoints.push(entrypoint);
-        info!(
-          "Entrypoint {} bound to {}",
-          cfg.id, cfg.addr,
-        );
+        info!("Entrypoint {} bound to {}", cfg.id, cfg.addr,);
       }
       Err(err) => {
         error!(
@@ -127,10 +124,10 @@ async fn main() -> PuxResult<()> {
       }
     },
     _ = shutdown_signal() => {
-      info!("Shutdown signal received. Graceful shutdown will be performed...");
-      if let Err(err) = pux.shutdown() {
-        error!("Unable to stop server: {}", err);
-      }
+      // info!("Shutdown signal received. Graceful shutdown will be performed...");
+      // if let Err(err) = pux.shutdown() {
+      //   error!("Unable to stop server: {}", err);
+      // }
     }
   }
 

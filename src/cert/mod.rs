@@ -11,13 +11,13 @@ use tokio_rustls::rustls::sign::{any_supported_type, CertifiedKey, SigningKey};
 use tokio_rustls::rustls::PrivateKey;
 use tokio_rustls::webpki::DnsName;
 
-pub struct CertStore {
+pub(crate) struct CertStore {
   certs: HashMap<String, Arc<CertifiedKey>>,
   fallback_name: String,
 }
 
 impl CertStore {
-  pub fn new(fallback_name: DnsName) -> Self {
+  pub(crate) fn new(fallback_name: DnsName) -> Self {
     let mut name = <DnsName as AsRef<str>>::as_ref(&fallback_name).to_string();
     name.make_ascii_lowercase();
 
@@ -27,7 +27,11 @@ impl CertStore {
     }
   }
 
-  pub fn insert(&mut self, name: DnsName, cert: Arc<CertifiedKey>) -> Option<Arc<CertifiedKey>> {
+  pub(crate) fn insert(
+    &mut self,
+    name: DnsName,
+    cert: Arc<CertifiedKey>,
+  ) -> Option<Arc<CertifiedKey>> {
     let mut name = <DnsName as AsRef<str>>::as_ref(&name).to_string();
     name.make_ascii_lowercase();
 
@@ -47,7 +51,7 @@ impl ResolvesServerCert for CertStore {
 }
 
 // Load public certificate from file.
-pub fn load_certs(filename: &str) -> io::Result<Vec<rustls::Certificate>> {
+pub(crate) fn load_certs(filename: &str) -> io::Result<Vec<rustls::Certificate>> {
   // Open certificate file.
   let certfile = File::open(filename)?;
   let mut reader = BufReader::new(certfile);
@@ -58,7 +62,7 @@ pub fn load_certs(filename: &str) -> io::Result<Vec<rustls::Certificate>> {
 }
 
 // Load private key from file.
-pub fn load_private_key(filename: &str) -> io::Result<Arc<dyn SigningKey>> {
+pub(crate) fn load_private_key(filename: &str) -> io::Result<Arc<dyn SigningKey>> {
   // Open keyfile.
   let keyfile = File::open(filename)?;
   let mut reader = BufReader::new(keyfile);

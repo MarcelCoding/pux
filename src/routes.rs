@@ -2,21 +2,20 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::service::Service;
+use crate::service::Service as SService;
 
-pub struct Routes(HashMap<String, Vec<(Vec<String>, Arc<dyn Service + Send + Sync>)>>);
+pub(crate) type Service = Arc<dyn SService + Send + Sync>;
+pub(crate) type Path = Vec<String>;
+type Route = (Path, Service);
+
+pub(crate) struct Routes(HashMap<String, Vec<Route>>);
 
 impl Routes {
-  pub fn new() -> Self {
+  pub(crate) fn new() -> Self {
     Self(Default::default())
   }
 
-  pub fn insert(
-    &mut self,
-    host: String,
-    path: Vec<String>,
-    service: Arc<dyn Service + Send + Sync>,
-  ) {
+  pub(crate) fn insert(&mut self, host: String, path: Path, service: Service) {
     match self.0.entry(host) {
       Entry::Occupied(mut occupied) => {
         let paths = occupied.get_mut();
@@ -29,11 +28,7 @@ impl Routes {
     };
   }
 
-  pub fn find(
-    &self,
-    supplied_host: &str,
-    supplied_path: &[&str],
-  ) -> Option<&Arc<dyn Service + Send + Sync>> {
+  pub(crate) fn find(&self, supplied_host: &str, supplied_path: &[&str]) -> Option<&Service> {
     let paths = self.0.get(supplied_host)?;
 
     for (path, service) in paths {

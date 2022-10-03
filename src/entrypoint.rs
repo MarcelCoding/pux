@@ -6,8 +6,6 @@ use std::sync::Arc;
 use hyper::server::conn::Http;
 use hyper::service::service_fn;
 use tokio::net::{TcpListener, TcpStream};
-use tokio::select;
-use tokio::sync::broadcast::Receiver;
 use tokio_rustls::TlsAcceptor;
 use tracing::error;
 
@@ -16,7 +14,7 @@ use crate::error::PuxResult;
 use crate::handler::Handler;
 use crate::ServerConfig;
 
-pub struct Entrypoint {
+pub(crate) struct Entrypoint {
   id: String,
   listener: TcpListener,
   handler: Arc<Handler>,
@@ -24,7 +22,7 @@ pub struct Entrypoint {
 }
 
 impl Entrypoint {
-  pub async fn bind(
+  pub(crate) async fn bind(
     config: &EntrypointConfig,
     handler: Arc<Handler>,
     tls_config: Option<Arc<ServerConfig>>,
@@ -40,18 +38,12 @@ impl Entrypoint {
     })
   }
 
-  async fn accept_stram(
-    &self,
-    shutdown: &mut Receiver<()>,
-  ) -> PuxResult<Option<(TcpStream, SocketAddr)>> {
-    select! {
-      resp = self.listener.accept() => Ok(Some(resp?)),
-      _ = shutdown.recv() => Ok(None),
-    }
+  async fn accept_stram(&self) -> PuxResult<Option<(TcpStream, SocketAddr)>> {
+    Ok(Some(self.listener.accept().await?))
   }
 
-  pub async fn accept(&self, mut shutdown: Receiver<()>) -> PuxResult<()> {
-    while let Some((stream, peer_addr)) = self.accept_stram(&mut shutdown).await? {
+  pub(crate) async fn accept(&self) -> PuxResult<()> {
+    while let Some((stream, peer_addr)) = self.accept_stram().await? {
       stream.set_nodelay(true)?;
 
       let service = {
@@ -93,10 +85,11 @@ impl Entrypoint {
       }
     }
 
+    error!("Entrypoint {} stopped", self.id);
     Ok(())
   }
 
-  pub fn id(&self) -> &str {
-    &self.id
+  pub(crate) fn id(&self) -> &str {
+    self.id.as_str()
   }
 }

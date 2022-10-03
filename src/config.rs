@@ -3,55 +3,55 @@ use std::net::SocketAddr;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
-pub struct Config {
+pub(crate) struct Config {
   #[serde(default)]
-  pub entrypoints: Vec<EntrypointConfig>,
+  pub(crate) entrypoints: Vec<EntrypointConfig>,
   #[serde(default)]
-  pub routes: Vec<RouteConfig>,
-  pub services: ServiceConfig,
+  pub(crate) routes: Vec<RouteConfig>,
+  pub(crate) services: ServiceConfig,
   #[serde(default)]
-  pub upstreams: Vec<UpstreamConfig>,
+  pub(crate) upstreams: Vec<UpstreamConfig>,
   #[serde(default)]
-  pub certs: Vec<CertificateConfig>,
+  pub(crate) certs: Vec<CertificateConfig>,
 }
 
 #[derive(Deserialize)]
-pub struct EntrypointConfig {
-  pub id: String,
-  pub addr: SocketAddr,
-  pub tls: bool,
+pub(crate) struct EntrypointConfig {
+  pub(crate) id: String,
+  pub(crate) addr: SocketAddr,
+  pub(crate) tls: bool,
 }
 
 #[derive(Deserialize)]
-pub struct RouteConfig {
-  pub host: String,
+pub(crate) struct RouteConfig {
+  pub(crate) host: String,
   #[serde(default)]
-  pub path: Vec<String>,
-  pub entrypoints: Vec<String>,
-  pub service: String,
+  pub(crate) path: Vec<String>,
+  pub(crate) entrypoints: Vec<String>,
+  pub(crate) service: String,
 }
 
 #[derive(Deserialize)]
-pub struct ServiceConfig {
-  pub proxy: Vec<ProxyServiceConfig>,
+pub(crate) struct ServiceConfig {
+  pub(crate) proxy: Vec<ProxyServiceConfig>,
 }
 
 #[derive(Deserialize)]
-pub struct ProxyServiceConfig {
-  pub id: String,
-  pub upstream: String,
+pub(crate) struct ProxyServiceConfig {
+  pub(crate) id: String,
+  pub(crate) upstream: String,
 }
 
 #[derive(Deserialize)]
-pub struct UpstreamConfig {
-  pub id: String,
-  pub addrs: Vec<SocketAddr>,
-  pub sni: Option<String>,
+pub(crate) struct UpstreamConfig {
+  pub(crate) id: String,
+  pub(crate) addrs: Vec<SocketAddr>,
+  pub(crate) sni: Option<String>,
 }
 
 #[derive(Deserialize)]
-pub struct CertificateConfig {
-  pub names: Vec<String>,
-  pub chain: String,
-  pub key: String,
+pub(crate) struct CertificateConfig {
+  pub(crate) names: Vec<String>,
+  pub(crate) chain: String,
+  pub(crate) key: String,
 }

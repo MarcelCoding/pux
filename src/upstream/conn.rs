@@ -36,8 +36,8 @@ static TLS_CONNECTOR: Lazy<TlsConnector> = Lazy::new(|| {
 
 #[pin_project(project = ConnectionProj)]
 enum Connection {
-  Raw(#[pin] TcpStream),
-  Tls(#[pin] TlsStream<TcpStream>),
+  Raw(#[pin] Box<TcpStream>),
+  Tls(#[pin] Box<TlsStream<TcpStream>>),
 }
 
 pub(crate) struct HttpConnection {
@@ -59,9 +59,9 @@ impl Connection {
     }
 
     match sni {
-      None => Ok(Self::Raw(stream)),
+      None => Ok(Self::Raw(Box::new(stream))),
       Some(name) => match TLS_CONNECTOR.connect(name.clone(), stream).await {
-        Ok(tls_stream) => Ok(Self::Tls(tls_stream)),
+        Ok(tls_stream) => Ok(Self::Tls(Box::new(tls_stream))),
         Err(err) => Err(Error::Tls(err)),
       },
     }
