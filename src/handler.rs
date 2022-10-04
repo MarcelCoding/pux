@@ -36,6 +36,7 @@ impl Handler {
           .map(|index| &with_port[..index])
           .unwrap_or(with_port)
       })
+      .or_else(|| req.uri().host()) // http2 does not contain a host header?? but in the uri it is included??
       .map(|host| host.to_string());
 
     let service = match host {

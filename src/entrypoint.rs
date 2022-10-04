@@ -58,7 +58,9 @@ impl Entrypoint {
       match &self.tls_acceptor {
         None => {
           tokio::spawn(async move {
-            let conn = Http::new().serve_connection(stream, service);
+            let conn = Http::new()
+              .http1_only(true)
+              .serve_connection(stream, service);
             if let Err(err) = conn.await {
               error!("Failed to serve connection: {}", err);
             }
