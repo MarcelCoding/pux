@@ -18,6 +18,7 @@ pub(crate) struct HttpPool {
 }
 
 struct Internal {
+  // todo: use concurrent hash map: https://docs.rs/flurry
   conns: HashMap<SocketAddr, Vec<Instant>>,
   idle: Vec<Entry>,
   force_use: Duration,
